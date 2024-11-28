@@ -1,0 +1,39 @@
+name: "Greenion-Server"
+arch: "amd64"
+platform: "linux"
+version: "1.0.0"
+section: "default"
+priority: "extra"
+depends:
+- openssl
+# sanzu deps
+- libasound2
+- libgssapi-krb5-2
+- ${DEPENDS_LIBAVUTIL}
+- ${DEPENDS_LIBAVCODEC}
+
+maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
+description: |
+  Greenion is a remote desktop solution.
+    It supports Windows and Linux clients and servers, and is super fast!
+vendor: "Qarnot"
+homepage: "https://github.com/qarnot/greenion"
+license: "AGPLv3"
+contents:
+- src: greenion-agents/target/release/greenion-server
+  dst: /usr/bin/greenion-server
+- src: sanzu/target/release/sanzu_server
+  dst: /usr/bin/sanzu_server
+- src: greenion-agents/config/default/server/
+  dst: /etc/greenion-server/
+  type: config
+- src: greenion-agents/build/systemd-service/sanzu-server-wrapper.sh
+  dst: /etc/greenion-server/
+  type: config
+  file_info:
+    mode: 0744
+- src: greenion-agents/build/systemd-service/greenion-agent-server.service
+  dst: /usr/lib/systemd/system/
+
+scripts:
+  postinstall: ./packaging/scripts/server/postinstall.sh

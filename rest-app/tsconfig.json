@@ -1,0 +1,28 @@
+{
+  "include": ["src/**/*"],
+  "exclude": ["node_modules/"],
+  "compilerOptions": {    "target": "es6",
+    "module": "commonjs",
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "removeComments": true,
+    "allowJs": false,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "typeRoots": [ "./src/types", "./node_modules/@types"],
+    "outDir": "dist/",
+    "rootDir": "src",
+    "baseUrl": "src",
+    "paths": {
+      "@api/*": ["api/*"],
+      "@lib/*": ["lib/*"],
+      "@services/*": ["services/*"],
+      "@config": ["config/config.ts"],
+      "@test/*": ["test/*"]
+    }
+  }
+}

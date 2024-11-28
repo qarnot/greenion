@@ -1,0 +1,4 @@
+# unversion all env files
+*.env*
+#  except sample ones
+!*.env.sample*

@@ -1,0 +1,31 @@
+syntax = "proto3";
+package messages;
+
+message ServerHello  {
+  string version = 1;
+}
+
+message ClientHello  {
+  string version = 1;
+  string jwt = 2;
+}
+
+enum AuthResult {
+    AuthOk = 0;
+    AuthFailed = 1;
+}
+
+message ServerAuthResult {
+  AuthResult result = 1;
+}
+
+enum StartProxyStatus {
+  StartProxy = 0;
+  InternalServerError = 1;
+  ServerBusy = 2;
+  SanzuStartError = 3;
+}
+
+message ServerStartProxy {
+  StartProxyStatus result = 1;
+}

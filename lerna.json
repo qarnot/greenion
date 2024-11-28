@@ -1,0 +1,12 @@
+{
+  "packages": [
+    "rest-catalog",
+    "rest-app",
+    "rest-auth",
+    "www-app",
+    "www-auth",
+    "greenion-agent-server",
+    "greenion-agent-client"
+  ],
+  "version": "independent"
+}

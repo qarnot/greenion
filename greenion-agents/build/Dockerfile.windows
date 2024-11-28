@@ -1,0 +1,10 @@
+FROM rust:latest
+
+RUN apt update -y \
+    && rustup target add x86_64-pc-windows-gnu \
+    && apt install -y mingw-w64 cmake nasm libclang-dev protobuf-compiler librust-clang-sys-dev \
+    && cargo install --force --locked bindgen-cli
+
+WORKDIR /app
+
+CMD ["cargo", "build", "--target", "x86_64-pc-windows-gnu", "--release"]

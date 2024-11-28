@@ -1,0 +1,10 @@
+[client_auth_config]
+machine_id = "ID1234"
+
+[client_network_config]
+listening_port = 1123
+max_retries = 3
+
+[sanzu_client_launch_config]
+sanzu_client_external_startup = true
+

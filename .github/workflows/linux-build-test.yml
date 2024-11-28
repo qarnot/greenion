@@ -1,0 +1,71 @@
+name: build and test linux packages
+
+permissions:
+  contents: write
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-linux-packages:
+    strategy:
+      matrix:
+        version: [22.04, 24.04]
+    runs-on: ubuntu-${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone sanzu fork
+        run: git clone --depth=1 https://github.com/qarnot/sanzu
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            sanzu/target/
+            greenion-agents/target/
+          key: ${{ runner.os }}-${{ matrix.version }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build and package for linux
+        run: |
+           export MATRIX_VERSION=ubuntu-${{ matrix.version }}
+           bash .github/workflows/build-linux-packages.sh
+      - uses: actions/upload-artifact@v4
+        id: artifact-upload-step
+        with:
+          name: ubuntu-${{ matrix.version }}
+          path: ./output/Greenion-*.deb
+          if-no-files-found: error
+  test-linux:
+    needs: build-linux-packages
+    strategy:
+      matrix:
+        version: [22.04, 24.04]
+    runs-on: ubuntu-${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ubuntu-${{ matrix.version }}
+          path: ./greenion-agents/tests/installers/
+      - name: Test proxy
+        run: timeout 300 sudo bash ./greenion-agents/tests/run.sh
+      - name: Fix permissions for cache
+        run: sudo chmod -R 666 ./greenion-agents/tests/target/
+
+  release-linux:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: test-linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ubuntu-*
+          merge-multiple: true
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            Greenion-*.deb

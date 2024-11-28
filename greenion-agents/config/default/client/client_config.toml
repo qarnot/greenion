@@ -1,0 +1,13 @@
+[client_auth_config]
+jwks_url = "http://greenion.local:5004/.well-known/jwks.json"
+webapp_url = "http://greenion.local:5001"
+
+[client_network_config]
+listening_port = 1123
+max_retries = 3
+
+[sanzu_client_launch_config]
+sanzu_client_external_startup = false
+# note that path expansion is not supported here (ex: ~ or $HOME), an absolute path is required
+# sanzu_client_exe_path = "C:\\path\\to\\custom\\sanzu_client.exe"
+

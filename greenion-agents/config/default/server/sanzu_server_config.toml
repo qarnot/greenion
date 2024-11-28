@@ -1,0 +1,37 @@
+[video]
+max_fps = 30
+max_stall_img = 30
+
+[audio]
+sample_rate = 44100
+max_buffer_ms = 200
+
+[export_video_pci]
+device = "0x1110"
+vendor = "0x1af4"
+
+[ffmpeg.global]
+b = "200000000"
+time_base = "1/60"
+delay = "0"
+g = "1500"
+bf = "0"
+pixel_format = "yuv444p"
+
+[ffmpeg.libx264]
+pixel_format = "yuv444p"
+
+preset = "fast"
+tune = "zerolatency"
+
+[ffmpeg.h264_nvenc]
+pixel_format = "rgb0"
+
+preset = "fast"
+rc-lookahead = "0"
+zerolatency = "1"
+
+[ffmpeg.h264_amf]
+pixel_format = "yuv420p"
+usage = "ultralowlatency"
+quality = "balanced"

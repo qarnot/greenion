@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# custom `--no-verify` option for gitlab CI
+# this hook will be triggered by semantic-release job when creating a new tag
+if ! [ -z $GITLAB_CI ] && [ $GITLAB_CI = "true" ]; then
+    echo "'$(basename $0)' hook skipped"
+    exit 0
+fi
+
+. "$(dirname "$0")/_/husky.sh"
+
+npx lerna run precommit --stream --since HEAD

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Language="1033"
+           Manufacturer="Qarnot Computing"
+           Name="GreenionServerPackage"
+           UpgradeCode="A9664396-DC61-4C6E-ADB4-21F526961A50"
+           Version="1.0.0.0">
+
+    <Package InstallScope="perMachine" Compressed="yes" />
+
+    <MajorUpgrade DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="GreenionServer">
+          <Component Id='LicenseComponent' Guid='*'>
+            <File Id='LicenseFile'
+               Name='License.rtf'
+               DiskId='1'
+               Source='greenion-agents/installer/License.rtf'
+               KeyPath='yes'/>
+          </Component>
+          <Directory Id="AgentFolder" Name="Agent">
+            <Component Id="AgentServerComponent">
+              <File KeyPath="yes" Source="agent/greenion-server.exe"></File>
+            </Component>
+            <Component Id="WindowsWakeupServerComponent">
+              <File KeyPath="yes" Source="agent/windows-wakeup.exe"></File>
+            </Component>
+            <Component Id="AgentServiceWrapper">
+              <File Source="agent/service.exe"></File>
+              <ServiceInstall 
+                Id="GreenionAgentServiceInstaller" 
+                Type="ownProcess" 
+                Vital="yes" 
+                Name="GreenionAgentService"
+                DisplayName="GreenionAgentService"
+                Description="Service that launches the greenion server agent at computer startup"
+                Account="LocalSystem"
+                ErrorControl="normal"
+                Interactive="no"
+                Start="auto"  />
+              <ServiceControl
+                Id="GreenionAgentServiceUninstaller"
+                Name="GreenionAgentService" 
+                Remove="uninstall" 
+                Stop="uninstall" 
+                Wait="yes" />
+              </Component>
+            <!-- <Component Id="RootCaCrt"> -->
+            <!--   <File KeyPath="yes" Source="rootCa.crt"></File> -->
+            <!-- </Component> -->
+          </Directory>
+          <Directory Id="SanzuServerFolder" Name="SanzuServer">
+            <Component Id="Avcodec60Component">
+              <File KeyPath="yes" Source="sanzu_zip/avcodec-60.dll"></File>
+            </Component>
+            <Component Id="Avdevice60Component">
+              <File Source="sanzu_zip/avdevice-60.dll"></File>
+            </Component>
+            <Component Id="Avutil58Component">
+              <File Source="sanzu_zip/avutil-58.dll"></File>
+            </Component>
+            <Component Id="Libopus0Component">
+              <File Source="sanzu_zip/libopus-0.dll"></File>
+            </Component>
+            <Component Id="Libssp0Component">
+              <File Source="sanzu_zip/libssp-0.dll"></File>
+            </Component>
+            <Component Id="Postproc57Component">
+              <File Source="sanzu_zip/postproc-57.dll"></File>
+            </Component>
+            <Component Id="SanzuServerComponent">
+              <File Source="sanzu_zip/sanzu_server.exe"></File>
+            </Component>
+            <Component Id="Swresample4Component">
+              <File Source="sanzu_zip/swresample-4.dll"></File>
+            </Component>
+            <Component Id="Swscale7Component">
+              <File Source="sanzu_zip/swscale-7.dll"></File>
+            </Component>
+            </Directory>
+
+          <Directory Id="ConfigFolder" Name="Config">
+
+            <Component Id="AgentServerConfig">
+              <File Source="default_config/server_config.toml"></File>
+            </Component>
+            <Component Id="SanzuServerConfig">
+              <File Source="default_config/sanzu_server_config.toml"></File>
+            </Component>
+          </Directory>
+          <Directory Id="LogsFolder" Name="Logs">
+            </Directory>
+          <Directory Id="PrivateKeyFolder" Name="Key">
+            </Directory>
+        </Directory>
+      </Directory>
+    </Directory>
+
+
+    <Feature Id="GreenionServerFeature">
+      <ComponentRef Id='LicenseComponent'/>
+
+      <ComponentRef Id="AgentServerComponent" />
+      <ComponentRef Id="WindowsWakeupServerComponent" />
+      <ComponentRef Id="AgentServiceWrapper" />
+      <!-- <ComponentRef Id="RootCaCrt" /> -->
+
+      <ComponentRef Id="SanzuServerComponent" />
+      <ComponentRef Id="Avcodec60Component" />
+      <ComponentRef Id="Avdevice60Component" />
+      <ComponentRef Id="Avutil58Component" />
+      <ComponentRef Id="Libopus0Component" />
+      <ComponentRef Id="Libssp0Component" />
+      <ComponentRef Id="Postproc57Component" />
+      <ComponentRef Id="Swresample4Component" />
+      <ComponentRef Id="Swscale7Component" />
+      <ComponentRef Id="AgentServerConfig" />
+      <ComponentRef Id="SanzuServerConfig" />
+
+    </Feature>
+
+    <WixVariable Id='WixUILicenseRtf' Value='greenion-agents/installer/License.rtf'/>
+  </Product>
+  </Wix>

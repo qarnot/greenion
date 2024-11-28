@@ -1,0 +1,49 @@
+{
+  "name": "greenion",
+  "version": "0.0.1",
+  "description": "monorepo for greenion apps",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:qarnot/greenion.git"
+  },
+  "scripts": {
+    "debug": "USER_UID=`id -u` USER_GID=`id -g` docker compose -f docker-compose.dev.yml up --build --force-recreate --watch -V",
+    "debug:hydra": "USER_UID=`id -u` USER_GID=`id -g` docker compose -f docker-compose.dev.yml up hydra --build --force-recreate --watch -V",
+    "prod": "docker compose -f docker-compose.yml up --build --force-recreate --watch -V",
+    "prod:hydra": "docker compose -f docker-compose.yml up hydra --build --force-recreate --watch -V",
+    "commit": "git-cz",
+    "prepare": "husky install",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "hydra:oauth2:create-client": " docker exec -it greenion-hydra-1 hydra create client --name rest-app --grant-type authorization_code,refresh_token,client_credentials -e http://172.17.0.1:4445 --response-type code --scope openid,profile,email,offline,admin --audience rest-app,rest-catalog --skip-consent  --allowed-cors-origin http://$DOMAIN:5001/,http://172.17.0.1:5001/ --redirect-uri http://$DOMAIN:5001/callback --token-endpoint-auth-method client_secret_basic",
+    "hydra:get-well-known-jwks": "curl --location 'http://localhost:4444/.well-known/jwks.json'",
+    "hydra:jwks:get-access-token-kid": "curl --location 'http://localhost:4445/admin/keys/hydra.jwt.access-token' | jq  -r '.keys[].kid'",
+    "hydra:jwks:create-session-vdi": "curl --location 'http://localhost:4445/admin/keys/vdi.session' --header 'Content-Type: application/json' --data '{ \"alg\": \"RS256\" }' | jq > jwks.json && mv jwks.json ./rest-auth/src/config/",
+    "greenion:create-user": "bash scripts/create-user.sh",
+    "greenion:create-machine": "bash scripts/create-machine.sh",
+    "greenion:link-machine": "bash scripts/link-machine.sh",
+    "ca:create": "cd rest-auth && npm run ca:create",
+    "config:copy:hydra": "cp docker-resources/hydra/.env.sample.hydra  docker-resources/hydra/.env.hydra",
+    "config:copy:kratos": "cp docker-resources/kratos/.env.sample.kratos  docker-resources/kratos/.env.kratos",
+    "config:copy:app": "cp docker-resources/.env.sample.app  docker-resources/.env.app",
+    "config:copy:auth": "cp docker-resources/.env.sample.auth docker-resources/.env.auth",
+    "config:copy:catalog": "cp docker-resources/.env.sample.catalog docker-resources/.env.catalog",
+    "config:copy:common": "cp docker-resources/.env.sample.common docker-resources/.env.common",
+    "config:copy:all": "(npm run config:copy:hydra) && (npm run config:copy:kratos) && (npm run config:copy:app) && (npm run config:copy:auth) && (npm run config:copy:catalog) && (npm run config:copy:common)",
+    "postinstall": "(cd rest-app && npm ci) && (cd rest-auth && npm ci) && (cd www-auth && yarn) && (cd www-app && yarn) && (cd rest-catalog && npm ci)"
+  },
+  "author": "",
+  "devDependencies": {
+    "@commitlint/cli": "^16.2.3",
+    "@commitlint/config-conventional": "^16.2.1",
+    "@commitlint/cz-commitlint": "^16.2.3",
+    "husky": "^7.0.4",
+    "lerna": "^5.6.2"
+  },
+  "config": {
+    "commitizen": {
+      "path": "@commitlint/cz-commitlint"
+    }
+  },
+  "license": "ISC"
+}

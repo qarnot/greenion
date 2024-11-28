@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Language="1033"
+           Manufacturer="Qarnot Computing"
+           Name="GreenionClientPackage"
+           UpgradeCode="7AE5F248-0A89-458F-8CC8-B726E2DAFC81"
+           Version="1.0.0.0">
+
+    <Package InstallScope="perMachine" Compressed="yes" />
+
+    <MajorUpgrade DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="GreenionClient">
+          <Component Id='LicenseComponent' Guid='*'>
+            <File Id='LicenseFile'
+               Name='License.rtf'
+               DiskId='1'
+               Source='greenion-agents/installer/License.rtf'
+               KeyPath='yes'/>
+          </Component>
+          <Directory Id="AgentFolder" Name="Agent">
+            <Component Id="AgentClientComponent">
+              <File KeyPath="yes" Source="agent/greenion-client.exe"></File>
+            </Component>
+            <Component Id="RootCaCrt">
+              <File KeyPath="yes" Source="rootCa.crt"></File>
+            </Component>
+          </Directory>
+          <Directory Id="SanzuClientFolder" Name="SanzuClient">
+            <Component Id="Avcodec60Component">
+              <File KeyPath="yes" Source="sanzu_zip/avcodec-60.dll"></File>
+            </Component>
+            <Component Id="Avdevice60Component">
+              <File Source="sanzu_zip/avdevice-60.dll"></File>
+            </Component>
+            <Component Id="Avutil58Component">
+              <File Source="sanzu_zip/avutil-58.dll"></File>
+            </Component>
+            <Component Id="Libopus0Component">
+              <File Source="sanzu_zip/libopus-0.dll"></File>
+            </Component>
+            <Component Id="Libssp0Component">
+              <File Source="sanzu_zip/libssp-0.dll"></File>
+            </Component>
+            <Component Id="Postproc57Component">
+              <File Source="sanzu_zip/postproc-57.dll"></File>
+            </Component>
+            <Component Id="SanzuClientComponent">
+              <File Source="sanzu_zip/sanzu_client.exe"></File>
+            </Component>
+            <Component Id="Swresample4Component">
+              <File Source="sanzu_zip/swresample-4.dll"></File>
+            </Component>
+            <Component Id="Swscale7Component">
+              <File Source="sanzu_zip/swscale-7.dll"></File>
+            </Component>
+          </Directory>
+        </Directory>
+        </Directory>
+      <Directory Id="AppDataFolder">
+        <Directory Id="GreenionClientConfig" Name="GreenionClient">
+            <Component Id="AgentClientConfig">
+              <File Source="default_config/client_config.toml"></File>
+            </Component>
+            <Component Id="SanzuClientConfig">
+              <File Source="default_config/sanzu_client_config.toml"></File>
+            </Component>
+          </Directory>
+        </Directory>
+    </Directory>
+
+
+    <DirectoryRef Id="TARGETDIR">
+    <Component Id="RegistryCustomProtocol" Guid="891DD0FE-0876-43CB-95D0-C4CB103C2FC8">
+           <!-- <File Source="$(var.GreenionClientPackage.TargetPath)" /> -->
+           <RegistryKey Root="HKCR"
+                 Key="greenion-open"
+                 Action="createAndRemoveOnUninstall">
+             <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+             <RegistryValue Type="string" Value="URL:Greenion Open Protocol"/>
+             <RegistryKey Key="DefaultIcon">
+               <RegistryValue Type="string" Value="greenion-client.exe" />
+             </RegistryKey>
+             <RegistryKey Key="shell\open\command">
+               <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]\Agent\greenion-client.exe&quot; &quot;%1&quot;" />
+             </RegistryKey>
+           </RegistryKey>
+         </Component>
+      </DirectoryRef>
+
+    <Feature Id="GreenionClientFeature">
+      <ComponentRef Id='LicenseComponent'/>
+
+      <ComponentRef Id="AgentClientComponent" />
+
+      <ComponentRef Id="Avcodec60Component" />
+      <ComponentRef Id="Avdevice60Component" />
+      <ComponentRef Id="Avutil58Component" />
+      <ComponentRef Id="Libopus0Component" />
+      <ComponentRef Id="Libssp0Component" />
+      <ComponentRef Id="Postproc57Component" />
+      <ComponentRef Id="SanzuClientComponent" />
+      <ComponentRef Id="Swresample4Component" />
+      <ComponentRef Id="Swscale7Component" />
+      <ComponentRef Id="AgentClientConfig" />
+      <ComponentRef Id="SanzuClientConfig" />
+
+      <ComponentRef Id="RegistryCustomProtocol" />
+    </Feature>
+
+    <WixVariable Id='WixUILicenseRtf' Value='greenion-agents/installer/License.rtf'/>
+  </Product>
+  </Wix>

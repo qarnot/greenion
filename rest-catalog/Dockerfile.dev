@@ -1,0 +1,25 @@
+FROM node:18-bullseye
+
+# Directory where the app files should be mounted.
+WORKDIR /app
+
+# Replicate the host user UID and GID inside the container to have the same permissions.
+ARG USERNAME=anonymous
+ARG UID=1000
+ARG GID=1000
+
+RUN groupadd -g "$GID" -o "$USERNAME"
+# The option --no-log-init is important to avoid creating a huge file (> 70 GB).
+RUN useradd -m -u "$UID" -g "$GID" -o -s "/bin/bash" "$USERNAME" --no-log-init
+
+# Copy the required secrets to download internal NPM packages.
+# RUN --mount=type=secret,id=npmrc \
+  # cat /run/secrets/npmrc > /home/$USERNAME/.npmrc
+
+# Install the required binaries not present in the default image.
+RUN  npm install -g nodemon
+# Change the user to the newly created user.
+USER $USERNAME
+ENV PORT 4003
+
+CMD npm run debug

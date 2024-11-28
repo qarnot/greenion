@@ -1,0 +1,12 @@
+diff --git a/internal/token/token.go b/internal/token/token.go
+index 85054b3..9b7eda0 100644
+--- a/internal/token/token.go
++++ b/internal/token/token.go
+@@ -71,6 +71,7 @@ func (s *service) SignToken(payload map[string]interface{}) ([]byte, error) {
+ 			return nil, fmt.Errorf("failed to set payload: %w", err)
+ 		}
+ 	}
++    t.Options().Enable(jwt.FlattenAudience)
+ 
+ 	jwt, err := jwt.Sign(t, jwt.WithKey(s.key.Algorithm(), s.key))
+ 	if err != nil {

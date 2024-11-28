@@ -1,0 +1,36 @@
+name: "Greenion-Client"
+arch: "amd64"
+platform: "linux"
+version: "1.0.0"
+section: "default"
+priority: "extra"
+depends:
+- openssl
+# sanzu deps
+- libasound2
+- libgssapi-krb5-2
+- ${DEPENDS_LIBAVUTIL}
+- ${DEPENDS_LIBAVCODEC}
+# for custom protocol
+- xdg-utils
+- desktop-file-utils
+
+description: |
+  Greenion is a remote desktop solution.
+    It supports Windows and Linux clients and servers, and is super fast!
+vendor: "Qarnot"
+homepage: "https://github.com/qarnot/greenion"
+license: "AGPLv3"
+contents:
+- src: greenion-agents/target/release/greenion-client
+  dst: /usr/bin/greenion-client
+- src: sanzu/target/release/sanzu_client
+  dst: /usr/bin/sanzu_client
+- src: greenion-agents/config/default/client/
+  dst: /etc/greenion-client/
+  type: config
+- src: packaging/xdg-mime/greenion-client-protocol.desktop
+  dst: /usr/share/applications/greenion-client-protocol.desktop
+
+scripts:
+  postinstall: ./packaging/scripts/client/postinstall.sh

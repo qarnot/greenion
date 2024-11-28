@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# custom `--no-verify` option for gitlab CI
+# this hook will be triggered by semantic-release job when creating a new tag
+if ! [ -z $GITLAB_CI ] && [ $GITLAB_CI = "true" ]; then
+    echo "'$(basename $0)' hook skipped"
+    exit 0
+fi
+
+. "$(dirname "$0")/_/husky.sh"
+
+LOCAL_REF=$(git rev-parse --abbrev-ref HEAD)
+
+# prevent accidental push on master
+if [ $LOCAL_REF = "master" ]; then
+  commitsNbSinceSource=$(git rev-list --count HEAD ^origin/master)
+  if [ $commitsNbSinceSource -gt 1 ]; then
+    echo "You are trying to push more than one commit on 'master' branch, this is not normal"
+    exit 1
+  fi
+
+  lastCommitSubject=$(git show -s --format=%s | cat)
+  # git hooks are run from root folder
+  lernaPackagesPattern=$(node -e "console.log(require('./lerna.json').packages.join('|'))")
+  releasePattern="($lernaPackagesPattern)-v[0-9]+\.[0-9]+\.[0-9]+.*"
+  # testing regex pattern using node.js because not possible using /bin/sh (or complicated - we are not in bash)
+  isSubjectMatchingReleasePattern=$(node -e "console.log(/$releasePattern/.test(\"$lastCommitSubject)\"))")
+  if [ $isSubjectMatchingReleasePattern = "false" ]; then
+    echo "You can only push release commits on 'master' branch"
+    exit 1
+  fi
+fi
+
+# check if LOCAL_REF exists on upstream
+if git rev-parse --quiet --verify origin/${LOCAL_REF} > /dev/null; then
+  # if so, use it
+  UPSTREAM_REF="origin/${LOCAL_REF}"
+else
+  # if not, default to origin/HEAD, this should be the case only for newly created branches
+  UPSTREAM_REF="origin/HEAD"
+fi
+
+npx lerna run prepush --stream --since $UPSTREAM_REF

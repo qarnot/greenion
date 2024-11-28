@@ -1,0 +1,12 @@
+[server_auth_config]
+jwks_url = "http://greenion.local:5004/.well-known/jwks.json"
+webapp_url = "http://greenion.local:5001"
+
+[server_network_config]
+server_port = 9447
+server_listening_ip = "0.0.0.0"
+
+[sanzu_server_launch_config]
+sanzu_server_external_startup = false
+sanzu_server_port = 1122
+

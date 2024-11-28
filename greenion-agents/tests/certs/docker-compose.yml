@@ -1,0 +1,7 @@
+services:
+    local-jwks-server:
+        image: ghcr.io/murar8/local-jwks-server:latest
+        volumes:
+            - ./rootCA.key:/etc/local-jwks-server/key.pem:ro
+        ports:
+            - 8080:8080

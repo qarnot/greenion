@@ -1,0 +1,81 @@
+name: build and test windows installer
+
+permissions:
+  contents: write
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-windows-executables:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            greenion-agents/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build windows executables
+        run: source .github/workflows/build-windows-executables.sh
+      - uses: actions/upload-artifact@v4
+        id: artifact-upload-step
+        with:
+          name: Windows-Executables
+          path: ./output
+          if-no-files-found: error
+  build-windows-installer:
+      needs: build-windows-executables
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          kind: [Server, Client]
+      steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Windows-Executables
+      - run: chmod -R 777 . # there is probably a better way to give docker access to the current folder
+      - name: Build windows installers
+        run: |
+         docker run -v .:/wix dactiv/wix .github/workflows/build-windows-installer.sh ${{ matrix.kind }}
+      - uses: actions/upload-artifact@v4
+        id: artifact-upload-step
+        with:
+          name: Windows-${{ matrix.kind }}-Installer
+          path: ./Greenion${{ matrix.kind }}Installer.msi
+          if-no-files-found: error
+  test-windows:
+    needs: build-windows-installer
+    strategy:
+      matrix:
+        version: [2019, 2022, latest]
+    runs-on: windows-${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./greenion-agents/tests/installers/
+          merge-multiple: true
+      - name: Test proxy
+        shell: bash
+        run: bash ./greenion-agents/tests/run.windows.sh
+  release-windows:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: test-windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            Greenion*.msi

@@ -1,0 +1,10 @@
+[Unit]
+Description=Launches the greenion server agent at computer startup
+After=graphical.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/greenion-server
+
+[Install]
+WantedBy=graphical.target

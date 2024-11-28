@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Greenion client protocol
+Exec=/usr/bin/greenion-client %u
+Terminal=false
+StartupNotify=false
+MimeType=x-scheme-handler/greenion-open;

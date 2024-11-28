@@ -1,0 +1,247 @@
+volumes:
+  hydra-sqlite:
+  kratos-sqlite:
+  catalog-mariadb:
+
+name: greenion
+
+services:
+  rest-auth:
+    build:
+      context: ./rest-auth
+      dockerfile: ./Dockerfile.dev
+      args:
+        UID: "$USER_UID"
+        GID: "$USER_GID"
+        USERNAME: "${USERNAME:-anonymous}"
+    ports:
+      - 127.0.0.1:4002:4002
+    restart: on-failure
+    env_file:
+    - ./docker-resources/.env.common
+    - ./docker-resources/.env.auth
+    environment:
+      DOMAIN: "${DOMAIN:-greenion.local}"
+      HYDRA_PUBLIC_URL: "http://${DOMAIN:-greenion.local}:5004/"
+    volumes:
+      - ./rest-auth:/app
+      - ./rest-auth/certs:/opt/greenion/certs
+      - ./rest-auth/src/config/config.sample.ts:/app/src/config/config.ts
+    extra_hosts:
+      - ${DOMAIN:-greenion.local}:172.17.0.1
+
+  www-auth:
+    build:
+      context: ./www-auth
+      dockerfile: ./Dockerfile.dev
+      args:
+        UID: "$USER_UID"
+        GID: "$USER_GID"
+        USERNAME: "${USERNAME:-anonymous}"
+    ports:
+        - 127.0.0.1:3002:3002
+    environment:
+      DOMAIN: "${DOMAIN:-greenion.local}"
+    restart: on-failure
+    volumes:
+      - ./www-auth:/usr/src/app
+
+  rest-app:
+    build:
+      context: ./rest-app
+      dockerfile: ./Dockerfile.dev
+      args:
+        UID: "$USER_UID"
+        GID: "$USER_GID"
+        USERNAME: "${USERNAME:-anonymous}"
+    ports:
+      - 127.0.0.1:4001:4001
+    environment:
+      DOMAIN: "${DOMAIN:-greenion.local}"
+      HYDRA_PUBLIC_URL: "http://${DOMAIN:-greenion.local}:5004/"
+    restart: on-failure
+    env_file:
+    - ./docker-resources/.env.common
+    - ./docker-resources/.env.app
+    volumes:
+      - ./rest-app:/app
+      - ./rest-app/src/config/config.sample.ts:/app/src/config/config.ts
+    extra_hosts:
+      - ${DOMAIN:-greenion.local}:172.17.0.1
+
+  www-app:
+    build:
+      context: ./www-app
+      dockerfile: ./Dockerfile.dev
+      args:
+        UID: "$USER_UID"
+        GID: "$USER_GID"
+        USERNAME: "${USERNAME:-anonymous}"
+    ports:
+      - 127.0.0.1:3001:3001
+    environment:
+      DOMAIN: "${DOMAIN:-greenion.local}"
+    restart: on-failure
+    volumes:
+      - ./www-app:/usr/src/app
+
+  rest-catalog:
+    build:
+      context: ./rest-catalog
+      dockerfile: ./Dockerfile.dev
+      args:
+        UID: "$USER_UID"
+        GID: "$USER_GID"
+        USERNAME: "${USERNAME:-anonymous}"
+    ports:
+      - 127.0.0.1:4003:4003
+    restart: on-failure
+    env_file:
+    - ./docker-resources/.env.common
+    - ./docker-resources/.env.catalog
+    depends_on:
+      mariadb_catalog:
+        condition: service_healthy
+    environment:
+      - DB_HOST=mariadb_catalog
+      - DB_PORT=3306
+      - DOMAIN=${DOMAIN:-greenion.local}
+    volumes:
+      - ./rest-catalog:/app
+      - ./rest-catalog/src/config/config.sample.ts:/app/src/config/config.ts
+    extra_hosts:
+      - ${DOMAIN:-greenion.local}:172.17.0.1
+
+  mariadb_catalog:
+    image: mariadb:10
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "catalog"
+      MYSQL_TCP_PORT: "3306"
+    ports:
+      - 127.0.0.1:3307:3306
+    volumes:
+      - catalog-mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  nginx:
+    image: nginx
+    ports:
+      - "5001:5001"
+      - "5002:5002"
+      - "5003:5003"
+      - "5004:5004"
+    volumes:
+      - ./docker-resources/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - rest-catalog
+
+  hydra:
+    image: oryd/hydra:v2.2.0-rc.3
+    ports:
+      - 4444:4444 # Public port
+      - 4445:4445 # Admin port
+    command: serve -c /etc/config/hydra/hydra.yml all --dev
+    env_file: ./docker-resources/hydra/.env.hydra
+    volumes:
+      - type: volume
+        source: hydra-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./docker-resources/hydra
+        target: /etc/config/hydra
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
+      - URLS_SELF_ISSUER=http://${DOMAIN:-greenion.local}:5004/
+      - URLS_CONSENT=http://${DOMAIN:-greenion.local}:5002/consent
+      - URLS_LOGIN=http://${DOMAIN:-greenion.local}:5002/login
+      - URLS_LOGOUT=http://${DOMAIN:-greenion.local}:5002/api/v1/auth/logout
+      - URLS_POST_LOGOUT_REDIRECT=http://${DOMAIN:-greenion.local}:5001/api/v1/auth/logout/callback
+
+    restart: on-failure
+    depends_on:
+      - hydra-migrate
+    extra_hosts:
+      - ${DOMAIN:-greenion.local}:172.17.0.1
+
+  hydra-migrate:
+    image: oryd/hydra:v2.2.0-rc.3
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
+    command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
+    volumes:
+      - type: volume
+        source: hydra-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./docker-resources/hydra
+        target: /etc/config/hydra
+    restart: on-failure
+
+  kratos-migrate:
+    image: oryd/kratos:v1.1.0
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true&mode=rwc
+    volumes:
+      - type: volume
+        source: kratos-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./docker-resources/kratos
+        target: /etc/config/kratos
+    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+    restart: on-failure
+
+  kratos:
+    depends_on:
+      - kratos-migrate
+    image: oryd/kratos:v1.1.0
+    ports:
+      - 4433:4433 # public
+      - 4434:4434 # admin
+    restart: unless-stopped
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
+      - LOG_LEVEL=trace
+    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    env_file: ./docker-resources/kratos/.env.kratos
+    volumes:
+      - type: volume
+        source: kratos-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./docker-resources/kratos
+        target: /etc/config/kratos
+
+  mailslurper:
+    image: oryd/mailslurper:latest-smtps
+    ports:
+      - 127.0.0.1:4436:4436
+      - 127.0.0.1:4437:4437
+
+  kratos-selfservice-ui-node:
+    image: oryd/kratos-selfservice-ui-node:v1.1.0
+    environment:
+      - KRATOS_PUBLIC_URL=http://127.0.0.1:4433/
+      - KRATOS_BROWSER_URL=http://127.0.0.1:4433/
+      - COOKIE_SECRET=changeme
+      - CSRF_COOKIE_NAME=ory_csrf_ui
+      - CSRF_COOKIE_SECRET=changeme
+      - PORT=4455
+      - SECURITY_MODE=
+    ports:
+      - 127.0.0.1:4455:4455
+
+  adminer:
+    image: adminer
+    restart: on-failure
+    ports:
+      - 127.0.0.1:8080:8080

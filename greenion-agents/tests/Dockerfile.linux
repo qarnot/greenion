@@ -1,0 +1,18 @@
+# for testing locally
+FROM ubuntu:24.04
+RUN apt-get update && apt-get install -y curl gcc psmisc unzip git
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+RUN curl -o go.tar.gz https://dl.google.com/go/go1.23.2.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go.tar.gz
+
+
+RUN curl -o local-jwks-server-src.zip https://codeload.github.com/murar8/local-jwks-server/zip/refs/tags/v1.4.0
+RUN unzip local-jwks-server-src.zip
+COPY ./certs/local-jwks-server-flat-aud.patch local-jwks-server-1.4.0/
+RUN cd ./local-jwks-server-1.4.0 && \
+  git apply ./local-jwks-server-flat-aud.patch
+
+
+ENV PATH="/root/.cargo/bin:/usr/local/go/bin:${PATH}"
