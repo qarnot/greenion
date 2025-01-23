@@ -88,7 +88,7 @@ services:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 10s
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 3
     ports:
       - 127.0.0.1:3307:3306
